@@ -1,13 +1,9 @@
 services:
-  # Python Flask API Server (Minimal)
+  # Python Flask API Server (Docker)
   - type: web
     name: pathao-tracker-api
-    env: python
+    env: docker
     plan: free
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.3
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /
     region: oregon
