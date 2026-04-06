@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pathao Parcel Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1f1f1f;
+    --surface3: #2a2a2a;
+    --border: #2e2e2e;
+    --border2: #404040;
+    --accent: #e8ff47;
+    --accent2: #b8cc1e;
+    --accent-dim: rgba(232,255,71,0.08);
+    --accent-dim2: rgba(232,255,71,0.15);
+    --text: #f0f0f0;
+    --text2: #a0a0a0;
+    --text3: #606060;
+    --green: #3ddc84;
+    --green-dim: rgba(61,220,132,0.12);
+    --orange: #ffb340;
+    --orange-dim: rgba(255,179,64,0.12);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.12);
+    --blue: #4d9eff;
+    --blue-dim: rgba(77,158,255,0.1);
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* Grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text3);
+  }
+
+  /* ── Search Form ── */
+  .search-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .search-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent 60%);
+  }
+
+  .search-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+
+  .field label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .field input::placeholder { color: var(--text3); }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim2);
+  }
+
+  .track-btn {
+    background: var(--accent);
+    color: #0d0d0d;
+    border: none;
+    border-radius: var(--radius);
+    padding: 11px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .track-btn:hover { background: var(--accent2); }
+  .track-btn:active { transform: scale(0.97); }
+  .track-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .track-btn .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .track-btn.loading .spinner { display: block; }
+  .track-btn.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Error ── */
+  .error-box {
+    background: var(--red-dim);
+    border: 1px solid var(--red);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 24px;
+    display: none;
+    font-family: var(--mono);
+  }
+
+  /* ── Result ── */
+  #result { display: none; animation: fadeUp 0.4s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Status Banner ── */
+  .status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .status-left { display: flex; flex-direction: column; gap: 4px; }
+
+  .status-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .status-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+
+  .status-pill.delivered   { background: var(--green-dim);  color: var(--green);  border-color: var(--green); }
+  .status-pill.in-transit  { background: var(--orange-dim); color: var(--orange); border-color: var(--orange); }
+  .status-pill.accepted    { background: var(--blue-dim);   color: var(--blue);   border-color: var(--blue); }
+  .status-pill.picked      { background: var(--accent-dim2); color: var(--accent); border-color: var(--accent); }
+  .status-pill.unknown     { background: var(--surface3);   color: var(--text3);  border-color: var(--border2); }
+
+  /* ── Info Grid ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 540px) { .info-grid { grid-template-columns: 1fr; } }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+  }
+
+  .info-card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  .info-card-value {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .info-card-value.mono {
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .info-card-value .amount {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* ── Progress Bar ── */
+  .progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+  }
+
+  .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: calc(50% + 13px);
+    right: calc(-50% + 13px);
+    height: 1px;
+    background: var(--border2);
+    z-index: 0;
+  }
+
+  .step-item.done:not(:last-child)::after { background: var(--accent); }
+
+  .step-dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+  }
+
+  .step-item.done .step-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .step-item.active .step-dot {
+    background: var(--surface2);
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px var(--orange-dim);
+  }
+
+  .step-dot svg { width: 12px; height: 12px; }
+  .step-item.done .step-dot svg { stroke: #0d0d0d; }
+  .step-item.active .step-dot svg { stroke: var(--orange); }
+  .step-item:not(.done):not(.active) .step-dot svg { stroke: var(--text3); }
+
+  .step-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--text3);
+    line-height: 1.3;
+  }
+
+  .step-item.done .step-name  { color: var(--accent); }
+  .step-item.active .step-name { color: var(--orange); }
+
+  /* ── Timeline ── */
+  .timeline-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .timeline-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .tl-item {
+    display: flex;
+    gap: 16px;
+    position: relative;
+    padding-bottom: 20px;
+  }
+
+  .tl-item:last-child { padding-bottom: 0; }
+
+  .tl-line-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 22px;
+    flex-shrink: 0;
+  }
+
+  .tl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: 5px;
+  }
+
+  .tl-item:not(:last-child) .tl-line {
+    flex: 1;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent), var(--border));
+    margin-top: 4px;
+    min-height: 20px;
+  }
+
+  .tl-body { flex: 1; }
+
+  .tl-event {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .tl-detail {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .tl-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* ── Product Card ── */
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .product-info .product-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .product-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .product-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .product-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    letter-spacing: 0.05em;
+  }
+
+  .product-price { text-align: right; flex-shrink: 0; }
+
+  .price-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+
+  .price-val {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .price-method {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* ── Refresh row ── */
+  .refresh-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .refresh-info {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+  }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    margin-top: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer p {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── Skeleton ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 6px;
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0d0d0d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v11a2 2 0 002 2h10a2 2 0 002-2V8"/>
+          <path d="M10 12h4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Pathao Tracker</div>
+        <div class="logo-sub">Parcel Tracking Gateway</div>
+      </div>
+    </div>
+    <div class="header-badge">Live Data</div>
+  </header>
+
+  <!-- Search Form -->
+  <div class="search-card">
+    <div class="search-title">// Track your shipment</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Consignment ID</label>
+        <input type="text" id="input-cid" placeholder="e.g. DP060426XYKJPB" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="text" id="input-phone" placeholder="e.g. 01993969247" autocomplete="off">
+      </div>
+      <button class="track-btn" id="track-btn" onclick="doTrack()">
+        <span class="btn-text" id="btn-text">Track →</span>
+        <span class="spinner" id="loading-indicator"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Box -->
+  <div class="error-box" id="error-box"></div>
+
+  <!-- Result -->
+  <div id="result">
+
+    <!-- Status Banner -->
+    <div class="status-banner">
+      <div class="status-left">
+        <span class="status-label">// consignment id</span>
+        <span class="status-value mono" id="r-cid" style="font-family:var(--mono);font-size:18px;font-weight:700;"></span>
+      </div>
+      <span class="status-pill" id="r-status-pill">—</span>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="progress-card">
+      <div class="progress-label">// delivery progress</div>
+      <div class="progress-steps" id="progress-steps">
+        <!-- JS-rendered steps -->
+      </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">// recipient</div>
+        <div class="info-card-value" id="r-recipient">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">// address</div>
+        <div class="info-card-value" id="r-address" style="font-size:13px;">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">// phone</div>
+        <div class="info-card-value mono" id="r-phone">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">// seller</div>
+        <div class="info-card-value mono" id="r-seller">—</div>
+      </div>
+    </div>
+
+    <!-- Product Card -->
+    <div class="product-card" id="product-card" style="display:none;">
+      <div class="product-info">
+        <div class="product-label">// item</div>
+        <div class="product-name" id="r-product">—</div>
+        <div class="product-tags" id="r-tags"></div>
+      </div>
+      <div class="product-price">
+        <div class="price-label">// cod amount</div>
+        <div class="price-val" id="r-amount">—</div>
+        <div class="price-method">Cash on Delivery</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-card" id="timeline-card" style="display:none;">
+      <div class="timeline-label">// event log</div>
+      <div class="timeline" id="r-timeline"></div>
+    </div>
+
+    <!-- Refresh Row -->
+    <div class="refresh-row">
+      <span class="refresh-info" id="r-last-updated">Last updated: —</span>
+      <button class="refresh-btn" onclick="doRefresh()">↺ Refresh</button>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>© 2026 Pathao Tracking Gateway — Data sourced from Pathao servers</p>
+    <p>Server: <a href="http://localhost:5000/api/health" target="_blank">localhost:5000</a></p>
+  </footer>
+
+</div>
+
+<script>
+const API_BASE = 'http://localhost:5000';
+
+const STEPS = [
+  { key: 'Accepted',          label: 'Accepted' },
+  { key: 'Picked',            label: 'Picked' },
+  { key: 'In Transit',        label: 'In Transit' },
+  { key: 'Ready for Delivery',label: 'Ready for\nDelivery' },
+  { key: 'Delivered',         label: 'Delivered' },
+];
+
+const STATUS_ORDER = STEPS.map(s => s.key);
+
+const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const DOT_SVG   = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="12" cy="12" r="4"/></svg>`;
+
+let lastCid = '', lastPhone = '';
+
+function getStatusClass(status) {
+  const s = status.toLowerCase();
+  if (s.includes('delivered'))   return 'delivered';
+  if (s.includes('transit'))     return 'in-transit';
+  if (s.includes('ready'))       return 'in-transit';
+  if (s.includes('picked'))      return 'picked';
+  if (s.includes('accepted'))    return 'accepted';
+  return 'unknown';
+}
+
+function statusIndex(status) {
+  const s = status.toLowerCase();
+  for (let i = STATUS_ORDER.length - 1; i >= 0; i--) {
+    if (s.includes(STATUS_ORDER[i].toLowerCase())) return i;
+  }
+  return -1;
+}
+
+function renderProgress(currentStatus) {
+  const container = document.getElementById('progress-steps');
+  const activeIdx = statusIndex(currentStatus);
+  container.innerHTML = '';
+  STEPS.forEach((step, i) => {
+    // All steps up to and including the current status should show checkmarks
+    // Only show orange dot for future steps that haven't been reached yet
+    const done = i <= activeIdx;
+    const active = false; // No active orange dot - completed steps show checkmarks
+    const div = document.createElement('div');
+    div.className = 'step-item' + (done ? ' done' : '') + (active ? ' active' : '');
+    div.innerHTML = `
+      <div class="step-dot">${done ? CHECK_SVG : DOT_SVG}</div>
+      <div class="step-name">${step.label}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderTimeline(timeline) {
+  const card = document.getElementById('timeline-card');
+  const container = document.getElementById('r-timeline');
+  if (!timeline || timeline.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  container.innerHTML = timeline.map((ev, i) => {
+    const isLast = i === timeline.length - 1;
+    return `
+      <div class="tl-item">
+        <div class="tl-line-col">
+          <div class="tl-dot"></div>
+          ${!isLast ? '<div class="tl-line"></div>' : ''}
+        </div>
+        <div class="tl-body">
+          <div class="tl-event">${ev.event || '—'}</div>
+          ${ev.detail ? `<div class="tl-detail">${ev.detail}</div>` : ''}
+          ${ev.timestamp ? `<div class="tl-time">${ev.timestamp}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderResult(data) {
+  const status = data.current_status || 'Unknown';
+
+  // Status banner
+  document.getElementById('r-cid').textContent = data.consignment_id || '—';
+  const pill = document.getElementById('r-status-pill');
+  pill.textContent = status;
+  pill.className = 'status-pill ' + getStatusClass(status);
+
+  // Progress
+  renderProgress(status);
+
+  // Info grid
+  document.getElementById('r-recipient').textContent = data.recipient_name || '—';
+  document.getElementById('r-address').textContent   = data.address || '—';
+  document.getElementById('r-phone').textContent     = data.phone || '—';
+  document.getElementById('r-seller').textContent    = data.seller || '—';
+
+  // Product
+  const prodCard = document.getElementById('product-card');
+  if (data.product_description || data.amount) {
+    prodCard.style.display = 'flex';
+    const name = data.product_description || '—';
+    document.getElementById('r-product').textContent = name;
+    document.getElementById('r-amount').textContent  = data.amount ? '৳' + Number(data.amount).toLocaleString() : '—';
+
+    // Remove automatic tag extraction - show normal product description
+    document.getElementById('r-tags').innerHTML = '';
+  } else {
+    prodCard.style.display = 'none';
+  }
+
+  // Timeline
+  renderTimeline(data.timeline || []);
+
+  // Last updated
+  const now = new Date();
+  const cached = data._cached ? ' (cached)' : '';
+  document.getElementById('r-last-updated').textContent =
+    `Last fetched: ${now.toLocaleTimeString('en-BD', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}${cached}`;
+
+  // Show
+  document.getElementById('result').style.display = 'block';
+}
+
+async function doTrack() {
+  const cid   = document.getElementById('input-cid').value.trim().toUpperCase();
+  const phone = document.getElementById('input-phone').value.trim();
+
+  if (!cid)   { showError('Please enter a Consignment ID.'); return; }
+  if (!phone) { showError('Please enter your phone number.'); return; }
+
+  hideError();
+  setLoading(true);
+  lastCid = cid; lastPhone = phone;
+
+  try {
+    const res  = await fetch(`${API_BASE}/api/track?consignment_id=${encodeURIComponent(cid)}&phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showError(data.error || `Server error (${res.status}). Is the Python server running?`);
+      document.getElementById('result').style.display = 'none';
+    } else {
+      renderResult(data);
+    }
+  } catch (err) {
+    showError('Cannot reach the server. Make sure server.py is running on port 5000.\n\nError: ' + err.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function doRefresh() {
+  if (!lastCid) return;
+  document.getElementById('input-cid').value   = lastCid;
+  document.getElementById('input-phone').value = lastPhone;
+  doTrack();
+}
+
+function setLoading(on) {
+  const btn = document.getElementById('track-btn');
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+  
+  // Show/hide improved loading indicator
+  const loader = document.getElementById('loading-indicator');
+  const btnText = document.getElementById('btn-text');
+  
+  if (on) {
+    loader.style.display = 'inline-block';
+    btnText.style.display = 'none';
+  } else {
+    loader.style.display = 'none';
+    btnText.style.display = 'inline-block';
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  
+  // Enhanced error messages
+  if (msg.includes('not found') || msg.includes('No data') || msg.includes('404')) {
+    box.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">🔍</span>
+        <div>
+          <strong>No Tracking Data Found</strong><br>
+          <span style="font-size: 13px; opacity: 0.8;">Please check your consignment ID and phone number, or try again later.</span>
+        </div>
+      </div>
+    `;
+  } else if (msg.includes('server') || msg.includes('500')) {
+    box.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">⚠️</span>
+        <div>
+          <strong>Server Error</strong><br>
+          <span style="font-size: 13px; opacity: 0.8;">Unable to process your request. Please try again in a few moments.</span>
+        </div>
+      </div>
+    `;
+  } else {
+    box.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">⚠️</span>
+        <div>
+          <strong>Tracking Error</strong><br>
+          <span style="font-size: 13px; opacity: 0.8;">${msg}</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  box.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  ['input-cid', 'input-phone'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') doTrack();
+    });
+  });
+
+  // Pre-fill from URL params
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('cid'))   document.getElementById('input-cid').value   = params.get('cid');
+  if (params.get('phone')) document.getElementById('input-phone').value = params.get('phone');
+  if (params.get('cid') && params.get('phone')) doTrack();
+});
+</script>
+</body>
+</html>
