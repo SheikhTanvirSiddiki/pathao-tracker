@@ -1,5 +1,5 @@
 services:
-  # Python Flask API Server (Docker)
+  # Python Flask API Server (Real Pathao Scraper)
   - type: web
     name: pathao-tracker-api
     env: docker
