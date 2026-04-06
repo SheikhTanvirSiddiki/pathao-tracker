@@ -1,11 +1,11 @@
 services:
-  # Python Flask API Server (Simplified)
+  # Python Flask API Server (Minimal)
   - type: web
     name: pathao-tracker-api
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn server_simple:app"
+    startCommand: "gunicorn app:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
