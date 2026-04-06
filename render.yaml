@@ -1,11 +1,11 @@
 services:
-  # Python Flask API Server
+  # Python Flask API Server (Simplified)
   - type: web
     name: pathao-tracker-api
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && playwright install chromium --with-deps"
-    startCommand: "gunicorn server:app"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn server_simple:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8
