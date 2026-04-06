@@ -7,6 +7,7 @@ Uses requests library for scraping instead of Playwright to avoid dependency iss
 import json
 import re
 import time
+import os
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import requests
